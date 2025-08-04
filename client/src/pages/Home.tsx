@@ -13,7 +13,7 @@ function Home() {
     return (
         <div>
             <h1>Home - Create or join a session</h1>
-            <button>Create Session</button>
+            <button onClick={join}>Create Session</button>
             <button onClick={join}>Join Session</button>
         </div>
     );

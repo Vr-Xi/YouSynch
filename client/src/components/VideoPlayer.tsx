@@ -6,7 +6,11 @@ declare global {
     }
 }
 
-function VideoPlayer() {
+type Props = {
+    video: string;
+};
+
+function VideoPlayer({ video }: Props) {
     const playerRef = useRef<HTMLDivElement | null>(null);
     const playerInstance = useRef<YT.Player | null>(null);    
 
@@ -33,6 +37,14 @@ function VideoPlayer() {
             onYouTubeIframeAPIReady();
         }
     }, []);
+
+    useEffect(() => {
+        if (playerInstance.current && video !== "") {
+            playerInstance.current.loadVideoById(video);
+        }
+    }, [video]);
+
+
     return <div ref={playerRef}></div>
 };
 
