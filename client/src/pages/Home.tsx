@@ -5,9 +5,10 @@ import { useEffect } from "react";
 
 function Home() {
     const navigate = rrd.useNavigate();
-    
     const location = rrd.useLocation();
+
     const error = location.state?.error;
+    const errorCheck = location.state?.show;
 
     const join = () => {
         navigate("/watch/test123");
@@ -24,6 +25,16 @@ function Home() {
         socket.on("session-created", (sessionId: string) => {
             navigate(`/watch/${sessionId}`);
         });
+
+        if (errorCheck === 0) {
+            navigate(".", { replace: true, state: null });
+        } else if (errorCheck === 1) {
+            navigate(".", { replace: true, state: {
+                error: error,
+                show: 0,
+                }
+            });
+        }
 
         return () => {
             socket.off("session-created");

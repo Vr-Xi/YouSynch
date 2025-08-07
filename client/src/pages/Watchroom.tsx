@@ -42,7 +42,7 @@ function Watchroom() {
         socket.emit("fetch-nickname");
 
         socket.on("session-invalid", () => {
-            navigate("/", { state: { error: "You tried to join a session that does not exist."} });
+            navigate("/", { state: { error: "The session you wanted to join does not exist.", show: 1} });
         });
         socket.on("send-members", (members: []) => {
             setMemberNames(members);

@@ -39,8 +39,12 @@ function disconnectHelper(socketId: string): void {
         socketToSession.delete(socketId);
 
         if (session.members.size === 0) {
-            sessions.delete(sessionId);
-            console.log("Session empied -- deleting.")
+            setTimeout(() => {
+                if (session.members.size === 0) {
+                    sessions.delete(sessionId);
+                    console.log("Session emptied -- deleting.")
+                }
+            }, 10000);
         } else {
             io.to(sessionId).emit("send-members", Array.from(session.nicknameMap))
         }
