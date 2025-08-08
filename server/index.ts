@@ -19,6 +19,7 @@ type Session = {
     lastActivity: number;
     nicknameMap: Map<string, string>;
     nextId: number;
+    deletionTimer?: NodeJS.Timeout;
 };
 
 const sessions: Map<string, Session> = new Map();
@@ -39,8 +40,12 @@ function disconnectHelper(socketId: string): void {
         socketToSession.delete(socketId);
 
         if (session.members.size === 0) {
-            setTimeout(() => {
-                if (session.members.size === 0) {
+            if (session.deletionTimer) {
+                clearTimeout(session.deletionTimer);
+            }
+
+            session.deletionTimer = setTimeout(() => {
+                if (session.members.size === 0) { // still empty
                     sessions.delete(sessionId);
                     console.log("Session emptied -- deleting.")
                 }
@@ -98,6 +103,11 @@ io.on("connection", (socket) => {
         session.nicknameMap.set(socket.id, `User ${session.nextId}`);
         session.nextId += 1;
 
+        if (session.deletionTimer) {
+            clearTimeout(session.deletionTimer);
+            delete session.deletionTimer;
+        }
+
         socket.join(sessionId);
         io.to(sessionId).emit("send-members", Array.from(session.nicknameMap));
     });
@@ -122,9 +132,16 @@ io.on("connection", (socket) => {
     socket.on("change-nickname", (newNickname: string) => {
         console.log(newNickname)
         const session = getSession(socket.id);
-        if(!session) return;
+        if (!session) return;
         session.nicknameMap.set(socket.id, newNickname);
+        session.nextId -= 1;
         io.to(session.id).emit("send-members", Array.from(session.nicknameMap));
+    });
+
+    socket.on("load-request", (video: string) => {
+        const session = getSession(socket.id);
+        if (!session) return;
+        io.to(session.id).emit("load-order", video)
     });
 
 });

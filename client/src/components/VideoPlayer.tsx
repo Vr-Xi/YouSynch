@@ -1,10 +1,11 @@
-import { useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
+import socket from "../socket";
 
 declare global {
     interface Window {
         onYouTubeIframeAPIReady: () => void;
     }
-}
+};
 
 type Props = {
     video: string;
@@ -12,7 +13,8 @@ type Props = {
 
 function VideoPlayer({ video }: Props) {
     const playerRef = useRef<HTMLDivElement | null>(null);
-    const playerInstance = useRef<YT.Player | null>(null);    
+    const playerInstance = useRef<YT.Player | null>(null);
+    const [ videoStorage, changeVideo ] = useState<string>(video);    
 
     useEffect(() => {
         const onYouTubeIframeAPIReady = () => {
@@ -22,7 +24,7 @@ function VideoPlayer({ video }: Props) {
                 width: "640",
                 videoId: "2H0r81kv5GA",
                 events: {
-                    onReady: () => console.log("Player ready"),
+                    onReady: () => console.log("Player ready."),
                     onStateChange: (event: YT.OnStateChangeEvent) => console.log("State change", event.data),
                 },
             });
@@ -36,12 +38,27 @@ function VideoPlayer({ video }: Props) {
         } else {
             onYouTubeIframeAPIReady();
         }
+
+        socket.on("load-order", (toLoad: string) => {
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+            changeVideo(toLoad);
+        })
+
+        return () => {
+            socket.off("load-order");
+        };
+
     }, []);
 
     useEffect(() => {
-        if (playerInstance.current && video !== "") {
-            playerInstance.current.loadVideoById(video);
+        if (playerInstance.current && videoStorage !== "") {
+            playerInstance.current.loadVideoById(videoStorage);
+            socket.emit("load-request", videoStorage)
         }
+    }, [videoStorage]);
+
+    useEffect(() => {
+        changeVideo(video);
     }, [video]);
 
 

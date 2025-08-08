@@ -37,6 +37,8 @@ function Watchroom() {
 
 
     useEffect(() => {
+        console.log(nickname);
+
         socket.emit("join-session", sessionId);
         socket.emit("fetch-members", sessionId);
         socket.emit("fetch-nickname");
@@ -47,6 +49,9 @@ function Watchroom() {
         socket.on("send-members", (members: []) => {
             setMemberNames(members);
         });
+
+        console.log(socket);
+        console.log("Type: " + typeof socket);
 
         socket.on("send-nickname", (fetchedNickname) => {
             const oldNickname = sessionStorage.getItem("nickname");
@@ -88,7 +93,7 @@ function Watchroom() {
                 <button type="submit">Send</button>
             </form>
             <VideoPlayer video={video}/>
-            <ul>
+            <ul style={{ backgroundColor: "white", color: "black"}}>
                 {memberEntries.map((entry: [string, string]) => {
                     return <li key={entry[0]}>{entry[1]}</li>
                 })}
