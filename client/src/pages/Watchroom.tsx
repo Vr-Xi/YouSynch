@@ -15,8 +15,9 @@ function Watchroom() {
     
     const handleLink = (event: React.FormEvent) => {
         event.preventDefault();
-        setVideo(extractVidId(vidUrl));
-        console.log(video);
+        const videoId = extractVidId(vidUrl);
+        socket.emit("load-request", videoId);
+        console.log(videoId);
     };
     const extractVidId = (url: string): string => {
         let result;
@@ -92,7 +93,7 @@ function Watchroom() {
                     onChange={(event) => setUrl(event.target.value)}/>
                 <button type="submit">Send</button>
             </form>
-            <VideoPlayer video={video}/>
+            <VideoPlayer />
             <ul style={{ backgroundColor: "white", color: "black"}}>
                 {memberEntries.map((entry: [string, string]) => {
                     return <li key={entry[0]}>{entry[1]}</li>

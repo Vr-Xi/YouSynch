@@ -20,6 +20,7 @@ type Session = {
     nicknameMap: Map<string, string>;
     nextId: number;
     deletionTimer?: NodeJS.Timeout;
+    videoId?: string;
 };
 
 const sessions: Map<string, Session> = new Map();
@@ -78,6 +79,7 @@ io.on("connection", (socket) => {
             lastActivity: Date.now(),
             nicknameMap: new Map([[socket.id, "User 1"]]),
             nextId: 1,
+            videoId: "2H0r81kv5GA",
         };
 
         sessions.set(id, session);
@@ -138,10 +140,22 @@ io.on("connection", (socket) => {
         io.to(session.id).emit("send-members", Array.from(session.nicknameMap));
     });
 
+    socket.on("get-video", (sessionId) => {
+        // console.log("attempting video get request");
+        const session = sessions.get(sessionId);
+        if (!session) return;
+        // console.log("Video get request received")
+        io.to(socket.id).emit("send-video", session.videoId);
+    });
+
     socket.on("load-request", (video: string) => {
+        console.log("--Session-wide order requested")
         const session = getSession(socket.id);
         if (!session) return;
-        io.to(session.id).emit("load-order", video)
+        if (video === session.videoId) return;
+        session.videoId = video;
+        console.log("--Session-wide order should be live")
+        io.to(session.id).emit("load-order", session.videoId);
     });
 
 });

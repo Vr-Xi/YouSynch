@@ -1,68 +1,45 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
+import YouTube from "react-youtube";
 import socket from "../socket";
 
-declare global {
-    interface Window {
-        onYouTubeIframeAPIReady: () => void;
-    }
-};
 
-type Props = {
-    video: string;
-};
-
-function VideoPlayer({ video }: Props) {
-    const playerRef = useRef<HTMLDivElement | null>(null);
-    const playerInstance = useRef<YT.Player | null>(null);
-    const [ videoStorage, changeVideo ] = useState<string>(video);    
+function VideoPlayer() {
+    const { sessionId } = useParams<{ sessionId: string }>();
+    const [videoId, setVideoId] = useState<string | null>(null);
+    const playerRef = useRef<YT.Player | null>(null);
 
     useEffect(() => {
-        const onYouTubeIframeAPIReady = () => {
-            if (!playerRef.current) return;
-            playerInstance.current = new window.YT.Player(playerRef.current, {
-                height: "390",
-                width: "640",
-                videoId: "2H0r81kv5GA",
-                events: {
-                    onReady: () => console.log("Player ready."),
-                    onStateChange: (event: YT.OnStateChangeEvent) => console.log("State change", event.data),
-                },
-            });
-        };
 
-        if (!window.YT) {
-            const tag = document.createElement("script");
-            tag.src = "https://www.youtube.com/iframe_api";
-            window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
-            document.body.appendChild(tag);
-        } else {
-            onYouTubeIframeAPIReady();
-        }
-
-        socket.on("load-order", (toLoad: string) => {
-            // eslint-disable-next-line react-hooks/exhaustive-deps
-            changeVideo(toLoad);
-        })
+        socket.emit("get-video", sessionId);
+        
+        const onLoad = (id: string) => setVideoId(id);
+        socket.on("load-order", onLoad);
+        socket.on("send-video", onLoad);
 
         return () => {
             socket.off("load-order");
-        };
-
+            socket.off("send-video");
+        }
     }, []);
 
-    useEffect(() => {
-        if (playerInstance.current && videoStorage !== "") {
-            playerInstance.current.loadVideoById(videoStorage);
-            socket.emit("load-request", videoStorage)
-        }
-    }, [videoStorage]);
+    // react-youtube gives you the real YT player when it’s ready
+    const handleReady = (e: { target: YT.Player }) => {
+        playerRef.current = e.target;
+    };
 
-    useEffect(() => {
-        changeVideo(video);
-    }, [video]);
+    // (optional) if you want to request a change from here later:
+    // socket.emit("load-request", newId);
 
+    if (!videoId) return <div />; // or a tiny placeholder
 
-    return <div ref={playerRef}></div>
-};
+    return (
+        <YouTube
+            videoId={videoId}
+            onReady={handleReady}
+            opts={{ width: "640", height: "390", playerVars: { autoplay: 0 } }}
+        />
+    );
+}
 
 export default VideoPlayer;
